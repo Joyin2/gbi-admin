@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "site": "gbiadmin",
+    "public": ".next",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "asia-east1"
+    }
+  }
+}
