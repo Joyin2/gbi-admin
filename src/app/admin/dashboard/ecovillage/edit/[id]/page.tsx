@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { db, storage, auth } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -44,7 +44,7 @@ export default function EditEcovillageImage({ params }: EcovillageEditProps) {
     if (!authLoading) {
       fetchEcovillageImage();
     }
-  }, [authLoading, id]);
+  }, [authLoading, id, fetchEcovillageImage]);
 
   const fetchEcovillageImage = async () => {
     try {

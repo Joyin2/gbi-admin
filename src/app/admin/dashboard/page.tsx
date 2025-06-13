@@ -56,7 +56,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Welcome back, Admin!</h1>
-            <p className="text-blue-100">Here's what's happening with your platform today.</p>
+            <p className="text-blue-100">Here&apos;s what&apos;s happening with your platform today.</p>
           </div>
           <div className="hidden md:block">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
