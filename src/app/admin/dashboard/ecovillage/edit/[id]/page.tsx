@@ -46,11 +46,11 @@ export default function EditEcovillageImage({ params }: EcovillageEditProps) {
     }
   }, [authLoading, id, fetchEcovillageImage]);
 
-  const fetchEcovillageImage = async () => {
+  const fetchEcovillageImage = useCallback(async () => {
     try {
       setDataLoading(true);
       const imageDoc = await getDoc(doc(db, 'ecovillage', id));
-      
+
       if (imageDoc.exists()) {
         const data = imageDoc.data();
         setName(data.name || '');
@@ -72,7 +72,7 @@ export default function EditEcovillageImage({ params }: EcovillageEditProps) {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [id, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

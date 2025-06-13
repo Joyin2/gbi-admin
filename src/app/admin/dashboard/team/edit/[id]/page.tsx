@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { db, storage, auth } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -45,13 +45,13 @@ export default function EditTeamMember({ params }: TeamMemberEditProps) {
     if (!authLoading) {
       fetchTeamMember();
     }
-  }, [authLoading, id]);
+  }, [authLoading, id, fetchTeamMember]);
 
-  const fetchTeamMember = async () => {
+  const fetchTeamMember = useCallback(async () => {
     try {
       setDataLoading(true);
       const teamMemberDoc = await getDoc(doc(db, 'team', id));
-      
+
       if (teamMemberDoc.exists()) {
         const data = teamMemberDoc.data();
         setName(data.name || '');
@@ -74,7 +74,7 @@ export default function EditTeamMember({ params }: TeamMemberEditProps) {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [id, router]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
