@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -222,11 +222,17 @@ export default function DashboardLayout({
               <div className="p-4 border-t border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-medium">A</span>
+                    <span className="text-white text-xs font-medium">
+                      {user?.email?.charAt(0).toUpperCase() || 'A'}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
-                    <p className="text-xs text-gray-500 truncate">admin@gbillp.com</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.displayName || 'Admin User'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email || 'admin@gbillp.com'}
+                    </p>
                   </div>
                 </div>
               </div>
