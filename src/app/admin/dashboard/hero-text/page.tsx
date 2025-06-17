@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 
 interface HeroText {
@@ -12,11 +12,11 @@ interface HeroText {
   subtitle: string;
   buttonText?: string;
   buttonLink?: string;
-  updatedAt?: any;
+  updatedAt?: { toDate: () => Date } | null;
 }
 
 // Hero Text Card Component
-function HeroTextCard({ heroText, formatDate }: { heroText: HeroText; formatDate: (timestamp: any) => string }) {
+function HeroTextCard({ heroText, formatDate }: { heroText: HeroText; formatDate: (timestamp: { toDate: () => Date } | null) => string }) {
   return (
     <div className="group bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300">
       <div className="flex items-start justify-between mb-4">
@@ -148,7 +148,7 @@ export default function HeroTextPage() {
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: { toDate: () => Date } | null) => {
     if (!timestamp) return 'Not updated';
     try {
       return timestamp.toDate().toLocaleDateString('en-US', {

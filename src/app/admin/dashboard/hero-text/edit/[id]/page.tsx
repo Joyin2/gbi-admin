@@ -17,7 +17,6 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
   const [pageName, setPageName] = useState('');
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
-  const [description, setDescription] = useState('');
   const [buttonText, setButtonText] = useState('');
   const [buttonLink, setButtonLink] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +49,6 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
         setPageName(data.pageName || '');
         setTitle(data.title || '');
         setSubtitle(data.subtitle || '');
-        setDescription(data.description || '');
         setButtonText(data.buttonText || '');
         setButtonLink(data.buttonLink || '');
       } else {
