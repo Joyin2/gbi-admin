@@ -16,7 +16,7 @@ export default function NewRiceProduct() {
   const [featured, setFeatured] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  // Removed unused mediaType state
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [status, setStatus] = useState<{
@@ -24,7 +24,7 @@ export default function NewRiceProduct() {
     message: string;
   }>({ type: null, message: '' });
   const router = useRouter();
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setAuthLoading(false);
