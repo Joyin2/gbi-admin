@@ -15,6 +15,7 @@ export default function Dashboard() {
     teamMembers: 0,
     ecovillageImages: 0,
     contacts: 0,
+    heroTexts: 0,
   });
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function Dashboard() {
         const teamSnapshot = await getDocs(collection(db, 'team'));
         const ecovillageSnapshot = await getDocs(collection(db, 'ecovillage'));
         const contactsSnapshot = await getDocs(collection(db, 'contacts'));
+        const heroTextsSnapshot = await getDocs(collection(db, 'heroTexts'));
 
         setStats({
           blogs: blogsSnapshot.size,
@@ -40,6 +42,7 @@ export default function Dashboard() {
           teamMembers: teamSnapshot.size,
           ecovillageImages: ecovillageSnapshot.size,
           contacts: contactsSnapshot.size,
+          heroTexts: heroTextsSnapshot.size,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -223,6 +226,23 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Hero Texts */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-sm font-medium text-gray-500">Hero Texts</h3>
+              <p className="text-2xl font-bold text-gray-900">{stats.heroTexts}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -263,6 +283,15 @@ export default function Dashboard() {
               </svg>
             </div>
             <span className="text-sm font-medium text-emerald-700">Add Ecovillage Image</span>
+          </a>
+
+          <a href="/admin/dashboard/hero-text" className="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-orange-700">Manage Hero Text</span>
           </a>
         </div>
       </div>
