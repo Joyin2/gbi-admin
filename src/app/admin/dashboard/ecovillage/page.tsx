@@ -6,15 +6,17 @@ import { collection, getDocs, deleteDoc, doc, Timestamp, orderBy, query } from '
 import Link from 'next/link';
 import Image from 'next/image';
 
-interface EcovillageImage {
+interface EcovillageMedia {
   id: string;
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   createdAt: Timestamp;
 }
 
 export default function EcovillagePage() {
-  const [images, setImages] = useState<EcovillageImage[]>([]);
+  const [images, setImages] = useState<EcovillageMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,13 +32,15 @@ export default function EcovillagePage() {
       const q = query(collection(db, 'ecovillage'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       
-      const ecovillageImages: EcovillageImage[] = [];
+      const ecovillageImages: EcovillageMedia[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         ecovillageImages.push({
           id: doc.id,
           name: data.name,
           imageUrl: data.imageUrl,
+          mediaUrl: data.mediaUrl || data.imageUrl,
+          mediaType: data.mediaType || (data.imageUrl ? 'image' : null),
           createdAt: data.createdAt,
         });
       });
@@ -119,15 +123,38 @@ export default function EcovillagePage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {images.map((image) => (
-            <div key={image.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
+            <div key={image.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow group">
               <div className="aspect-video relative">
-                <Image
-                  src={image.imageUrl}
-                  alt={image.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                />
+                {image.mediaType === 'video' ? (
+                  <>
+                    <video
+                      src={image.mediaUrl || image.imageUrl}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      preload="metadata"
+                      muted
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.pause();
+                        e.currentTarget.currentTime = 0;
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    <div className="absolute bottom-2 right-2 rounded bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </>
+                ) : (
+                  <Image
+                    src={image.mediaUrl || image.imageUrl || ''}
+                    alt={image.name}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  />
+                )}
               </div>
               
               <div className="p-4">

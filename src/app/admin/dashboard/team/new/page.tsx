@@ -13,6 +13,7 @@ export default function NewTeamMember() {
   const [designation, setDesignation] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoType, setPhotoType] = useState<'image' | 'video' | null>(null);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [status, setStatus] = useState<{
@@ -35,33 +36,38 @@ export default function NewTeamMember() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Determine file type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
         setStatus({
           type: 'error',
-          message: 'Photo size must be less than 5MB'
+          message: 'Please select a valid image or video file'
         });
         return;
       }
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+      // Validate file size (max 50MB for videos, 5MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
         setStatus({
           type: 'error',
-          message: 'Please select a valid image file'
+          message: `File size must be less than ${isVideo ? '50MB' : '5MB'}`
         });
         return;
       }
 
       setPhoto(file);
-      
+      setPhotoType(isImage ? 'image' : 'video');
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setPhotoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       // Clear any previous error
       setStatus({ type: null, message: '' });
     }
@@ -76,7 +82,8 @@ export default function NewTeamMember() {
 
       // Create a unique filename with user ID to prevent conflicts
       const filename = `${user.uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const storageRef = ref(storage, `team-photos/${filename}`);
+      const isVideo = file.type.startsWith('video/');
+      const storageRef = ref(storage, `team-${isVideo ? 'videos' : 'photos'}/${filename}`);
       
       // Upload file with custom metadata
       const metadata = {
@@ -84,7 +91,8 @@ export default function NewTeamMember() {
           userId: user.uid,
           uploadedAt: new Date().toISOString(),
           contentType: file.type,
-          userEmail: user.email || 'unknown'
+          userEmail: user.email || 'unknown',
+          mediaType: isVideo ? 'video' : 'image'
         }
       };
 
@@ -124,7 +132,7 @@ export default function NewTeamMember() {
     if (!photo) {
       setStatus({
         type: 'error',
-        message: 'Please select a photo'
+        message: 'Please select a photo or video'
       });
       return;
     }
@@ -143,6 +151,8 @@ export default function NewTeamMember() {
         name: name.trim(),
         designation: designation.trim(),
         photoUrl,
+        mediaUrl: photoUrl, // New field for consistency
+        mediaType: photoType,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -184,7 +194,7 @@ export default function NewTeamMember() {
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Add New Team Member</h1>
-        <p className="text-gray-600 mt-2">Upload a team member with their photo, name, and designation.</p>
+        <p className="text-gray-600 mt-2">Upload a team member with their photo/video, name, and designation.</p>
       </div>
 
       {status.message && (
@@ -232,28 +242,44 @@ export default function NewTeamMember() {
         
         <div>
           <label htmlFor="photo" className="mb-2 block text-sm font-medium text-gray-700">
-            Photo * (max 5MB)
+            Photo/Video * (Images: max 5MB, Videos: max 50MB)
           </label>
           <input
             id="photo"
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={handlePhotoChange}
             className="w-full rounded-md border border-gray-300 p-2 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800"
             disabled={loading}
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
+          </p>
           {photoPreview && (
             <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">Photo Preview:</p>
-              <Image 
-                src={photoPreview} 
-                alt="Team member preview" 
-                width={200}
-                height={200}
-                className="h-48 w-48 object-cover rounded-lg border shadow-sm" 
-                unoptimized
-              />
+              <p className="text-sm text-gray-600 mb-2">
+                {photoType === 'image' ? 'Photo' : 'Video'} Preview:
+              </p>
+              {photoType === 'image' ? (
+                <Image
+                  src={photoPreview}
+                  alt="Team member preview"
+                  width={200}
+                  height={200}
+                  className="h-48 w-48 object-cover rounded-lg border shadow-sm"
+                  unoptimized
+                />
+              ) : (
+                <video
+                  src={photoPreview}
+                  controls
+                  className="h-48 w-48 object-cover rounded-lg border shadow-sm"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
           )}
         </div>

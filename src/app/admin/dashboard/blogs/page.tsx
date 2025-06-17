@@ -11,7 +11,9 @@ import Image from 'next/image';
 interface Blog {
   id: string;
   title: string;
-  imageUrl: string;
+  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   content: string;
   authorEmail?: string;
   createdAt: {
@@ -123,15 +125,38 @@ export default function Blogs() {
               key={blog.id}
               className="group relative overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md"
             >
-              {blog.imageUrl && (
+              {(blog.mediaUrl || blog.imageUrl) && (
                 <div className="relative h-48 w-full overflow-hidden">
-                  <Image
-                    src={blog.imageUrl}
-                    alt={blog.title}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                  {blog.mediaType === 'video' ? (
+                    <video
+                      src={blog.mediaUrl || blog.imageUrl}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      preload="metadata"
+                      muted
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.pause();
+                        e.currentTarget.currentTime = 0;
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <Image
+                      src={blog.mediaUrl || blog.imageUrl || ''}
+                      alt={blog.title}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  )}
+                  {blog.mediaType === 'video' && (
+                    <div className="absolute bottom-2 right-2 rounded bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="p-6">

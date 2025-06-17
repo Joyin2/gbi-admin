@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import Image from 'next/image';
 
-export default function NewEcovillageImage() {
+export default function NewEcovillageMedia() {
   const [name, setName] = useState('');
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [media, setMedia] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [status, setStatus] = useState<{
@@ -31,73 +32,80 @@ export default function NewEcovillageImage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Determine file type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
         setStatus({
           type: 'error',
-          message: 'Image size must be less than 5MB'
+          message: 'Please select a valid image or video file'
         });
         return;
       }
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+      // Validate file size (max 50MB for videos, 5MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
         setStatus({
           type: 'error',
-          message: 'Please select a valid image file'
+          message: `File size must be less than ${isVideo ? '50MB' : '5MB'}`
         });
         return;
       }
 
-      setImage(file);
-      
+      setMedia(file);
+      setMediaType(isImage ? 'image' : 'video');
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        setMediaPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       // Clear any previous error
       setStatus({ type: null, message: '' });
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadMedia = async (file: File): Promise<string> => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        throw new Error('You must be logged in to upload images');
+        throw new Error('You must be logged in to upload media');
       }
 
       // Create a unique filename with user ID to prevent conflicts
       const filename = `${user.uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const storageRef = ref(storage, `ecovillage-images/${filename}`);
-      
+      const isVideo = file.type.startsWith('video/');
+      const storageRef = ref(storage, `ecovillage-${isVideo ? 'videos' : 'images'}/${filename}`);
+
       // Upload file with custom metadata
       const metadata = {
         customMetadata: {
           userId: user.uid,
           uploadedAt: new Date().toISOString(),
           contentType: file.type,
-          userEmail: user.email || 'unknown'
+          userEmail: user.email || 'unknown',
+          mediaType: isVideo ? 'video' : 'image'
         }
       };
 
-      console.log('Uploading image to:', storageRef.fullPath);
+      console.log('Uploading media to:', storageRef.fullPath);
       const snapshot = await uploadBytes(storageRef, file, metadata);
-      console.log('Image uploaded successfully');
-      
+      console.log('Media uploaded successfully');
+
       const downloadURL = await getDownloadURL(snapshot.ref);
       console.log('Download URL obtained:', downloadURL);
-      
+
       return downloadURL;
     } catch (error) {
-      console.error('Image upload error:', error);
-      throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Media upload error:', error);
+      throw new Error(`Failed to upload media: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -107,15 +115,15 @@ export default function NewEcovillageImage() {
     if (!name.trim()) {
       setStatus({
         type: 'error',
-        message: 'Please enter a name for the image'
+        message: 'Please enter a name for the media'
       });
       return;
     }
 
-    if (!image) {
+    if (!media) {
       setStatus({
         type: 'error',
-        message: 'Please select an image'
+        message: 'Please select an image or video'
       });
       return;
     }
@@ -124,26 +132,29 @@ export default function NewEcovillageImage() {
     setStatus({ type: null, message: '' });
     
     try {
-      console.log('Starting ecovillage image upload process...');
-      
-      // Upload image first
-      const imageUrl = await uploadImage(image);
-      
-      // Add ecovillage image to Firestore
+      console.log('Starting ecovillage media upload process...');
+
+      // Upload media first
+      const mediaUrl = await uploadMedia(media);
+
+      // Add ecovillage media to Firestore
       const ecovillageData = {
         name: name.trim(),
-        imageUrl,
+        mediaUrl,
+        mediaType,
+        imageUrl: mediaType === 'image' ? mediaUrl : null, // Keep backward compatibility
+        videoUrl: mediaType === 'video' ? mediaUrl : null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      console.log('Adding ecovillage image to Firestore:', ecovillageData);
+      console.log('Adding ecovillage media to Firestore:', ecovillageData);
       await addDoc(collection(db, 'ecovillage'), ecovillageData);
-      
-      console.log('Ecovillage image added successfully');
+
+      console.log('Ecovillage media added successfully');
       setStatus({
         type: 'success',
-        message: 'Ecovillage image added successfully!'
+        message: `Ecovillage ${mediaType} added successfully!`
       });
       
       // Redirect after a short delay
@@ -173,8 +184,8 @@ export default function NewEcovillageImage() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Add Ecovillage Image</h1>
-        <p className="text-gray-600 mt-2">Upload an image of the ecovillage with a descriptive name.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Add Ecovillage Media</h1>
+        <p className="text-gray-600 mt-2">Upload an image or video of the ecovillage with a descriptive name.</p>
       </div>
 
       {status.message && (
@@ -190,7 +201,7 @@ export default function NewEcovillageImage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">
-            Image Name/Title *
+            Media Name/Title *
           </label>
           <input
             id="name"
@@ -198,36 +209,52 @@ export default function NewEcovillageImage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-md border border-gray-300 p-3 text-gray-900 focus:border-gray-500 focus:outline-none"
-            placeholder="Enter a descriptive name for the image"
+            placeholder="Enter a descriptive name for the media"
             disabled={loading}
             required
           />
         </div>
         
         <div>
-          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">
-            Ecovillage Image * (max 5MB)
+          <label htmlFor="media" className="mb-2 block text-sm font-medium text-gray-700">
+            Ecovillage Media * (Images: max 5MB, Videos: max 50MB)
           </label>
           <input
-            id="image"
+            id="media"
             type="file"
-            accept="image/*"
-            onChange={handleImageChange}
+            accept="image/*,video/*"
+            onChange={handleMediaChange}
             className="w-full rounded-md border border-gray-300 p-2 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800"
             disabled={loading}
             required
           />
-          {imagePreview && (
+          <p className="text-xs text-gray-500 mt-1">
+            Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
+          </p>
+          {mediaPreview && (
             <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">Image Preview:</p>
-              <Image 
-                src={imagePreview} 
-                alt="Ecovillage image preview" 
-                width={400}
-                height={300}
-                className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm" 
-                unoptimized
-              />
+              <p className="text-sm text-gray-600 mb-2">
+                {mediaType === 'image' ? 'Image' : 'Video'} Preview:
+              </p>
+              {mediaType === 'image' ? (
+                <Image
+                  src={mediaPreview}
+                  alt="Ecovillage media preview"
+                  width={400}
+                  height={300}
+                  className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm"
+                  unoptimized
+                />
+              ) : (
+                <video
+                  src={mediaPreview}
+                  controls
+                  className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
           )}
         </div>
@@ -238,7 +265,7 @@ export default function NewEcovillageImage() {
             disabled={loading}
             className="flex-1 rounded-md bg-gray-900 px-4 py-3 text-white hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Adding Image...' : 'Add Ecovillage Image'}
+            {loading ? `Adding ${mediaType || 'Media'}...` : `Add Ecovillage ${mediaType === 'video' ? 'Video' : mediaType === 'image' ? 'Image' : 'Media'}`}
           </button>
           
           <button

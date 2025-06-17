@@ -13,7 +13,10 @@ export default function EditBlog({ params }: { params: { id: string } }) {
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [currentMediaUrl, setCurrentMediaUrl] = useState<string | null>(null);
+  const [currentMediaType, setCurrentMediaType] = useState<'image' | 'video' | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -31,7 +34,10 @@ export default function EditBlog({ params }: { params: { id: string } }) {
           setTitle(data.title);
           setContent(data.content);
           setCurrentImageUrl(data.imageUrl);
-          setImagePreview(data.imageUrl);
+          setCurrentMediaUrl(data.mediaUrl || data.imageUrl);
+          setCurrentMediaType(data.mediaType || (data.imageUrl ? 'image' : null));
+          setImagePreview(data.mediaUrl || data.imageUrl);
+          setMediaType(data.mediaType || (data.imageUrl ? 'image' : null));
         } else {
           alert('Blog not found');
           router.push('/admin/dashboard/blogs');
@@ -50,8 +56,26 @@ export default function EditBlog({ params }: { params: { id: string } }) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // Determine file type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
+        alert('Please upload an image or video file');
+        return;
+      }
+
+      // Check file size (max 50MB for videos, 5MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert(`File size should be less than ${isVideo ? '50MB' : '5MB'}`);
+        return;
+      }
+
       setImage(file);
-      
+      setMediaType(isImage ? 'image' : 'video');
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -72,19 +96,28 @@ export default function EditBlog({ params }: { params: { id: string } }) {
     
     try {
       let imageUrl = currentImageUrl;
-      
-      // Upload new image if selected
+      let mediaUrl = currentMediaUrl;
+      let finalMediaType = currentMediaType;
+
+      // Upload new media if selected
       if (image) {
-        const storageRef = ref(storage, `blog-images/${Date.now()}-${image.name}`);
+        const isVideo = image.type.startsWith('video/');
+        const storageRef = ref(storage, `blog-${isVideo ? 'videos' : 'images'}/${Date.now()}-${image.name}`);
         await uploadBytes(storageRef, image);
-        imageUrl = await getDownloadURL(storageRef);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        imageUrl = downloadURL; // For backward compatibility
+        mediaUrl = downloadURL;
+        finalMediaType = mediaType;
       }
-      
+
       // Update blog in Firestore
       await updateDoc(doc(db, 'blogs', id), {
         title,
         content,
         imageUrl,
+        mediaUrl,
+        mediaType: finalMediaType,
         updatedAt: serverTimestamp(),
       });
       
@@ -134,25 +167,42 @@ export default function EditBlog({ params }: { params: { id: string } }) {
         
         <div>
           <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-900">
-            Featured Image
+            Featured Media (Images: max 5MB, Videos: max 50MB)
           </label>
           <input
             id="image"
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={handleImageChange}
             className="w-full rounded-md border border-gray-300 p-2 text-gray-900"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
+          </p>
           {imagePreview && (
             <div className="mt-2">
-              <Image 
-                src={imagePreview} 
-                alt="Preview" 
-                width={160}
-                height={160}
-                className="h-40 w-auto object-cover rounded border" 
-                style={{ objectFit: 'cover' }}
-              />
+              <p className="text-sm text-gray-600 mb-2">
+                {(mediaType || currentMediaType) === 'image' ? 'Image' : 'Video'} Preview:
+              </p>
+              {(mediaType || currentMediaType) === 'video' ? (
+                <video
+                  src={imagePreview}
+                  controls
+                  className="h-40 w-auto object-cover rounded border"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={160}
+                  height={160}
+                  className="h-40 w-auto object-cover rounded border"
+                  style={{ objectFit: 'cover' }}
+                />
+              )}
             </div>
           )}
         </div>

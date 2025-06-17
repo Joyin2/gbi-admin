@@ -16,6 +16,7 @@ export default function NewHandicraftProduct() {
   const [featured, setFeatured] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [status, setStatus] = useState<{
@@ -47,27 +48,32 @@ export default function NewHandicraftProduct() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+
+      // Determine file type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
         setStatus({
           type: 'error',
-          message: 'Image size should be less than 5MB'
+          message: 'Please upload an image or video file'
         });
         return;
       }
 
-      // Check file type
-      if (!file.type.startsWith('image/')) {
+      // Check file size (max 50MB for videos, 5MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
         setStatus({
           type: 'error',
-          message: 'Please upload an image file'
+          message: `File size should be less than ${isVideo ? '50MB' : '5MB'}`
         });
         return;
       }
 
       setImage(file);
-      
+      setMediaType(isImage ? 'image' : 'video');
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -86,7 +92,8 @@ export default function NewHandicraftProduct() {
 
       // Create a unique filename with user ID to prevent conflicts
       const filename = `${user.uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const storageRef = ref(storage, `handicraft-product-images/${filename}`);
+      const isVideo = file.type.startsWith('video/');
+      const storageRef = ref(storage, `handicraft-product-${isVideo ? 'videos' : 'images'}/${filename}`);
       
       // Upload file with custom metadata
       const metadata = {
@@ -94,7 +101,8 @@ export default function NewHandicraftProduct() {
           userId: user.uid,
           uploadedAt: new Date().toISOString(),
           contentType: file.type,
-          userEmail: user.email || 'unknown'
+          userEmail: user.email || 'unknown',
+          mediaType: isVideo ? 'video' : 'image'
         }
       };
 
@@ -180,6 +188,8 @@ export default function NewHandicraftProduct() {
         description,
         price: price.trim() || null,
         imageUrl,
+        mediaUrl: imageUrl, // New field for consistency
+        mediaType,
         featured,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -274,26 +284,43 @@ export default function NewHandicraftProduct() {
             
             <div>
               <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">
-                Product Image (max 5MB)
+                Product Media (Images: max 5MB, Videos: max 50MB)
               </label>
               <input
                 id="image"
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleImageChange}
                 className="w-full rounded-md border border-gray-300 p-2 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800"
                 disabled={loading}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
+              </p>
               {imagePreview && (
                 <div className="mt-2">
-                  <Image 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    width={320}
-                    height={160}
-                    className="h-40 w-auto object-cover rounded border" 
-                    unoptimized
-                  />
+                  <p className="text-sm text-gray-600 mb-2">
+                    {mediaType === 'image' ? 'Image' : 'Video'} Preview:
+                  </p>
+                  {mediaType === 'image' ? (
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      width={320}
+                      height={160}
+                      className="h-40 w-auto object-cover rounded border"
+                      unoptimized
+                    />
+                  ) : (
+                    <video
+                      src={imagePreview}
+                      controls
+                      className="h-40 w-auto object-cover rounded border"
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
                 </div>
               )}
             </div>
