@@ -77,15 +77,16 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title.trim()) {
+
+    // Skip title validation for pickle page
+    if (id !== 'products-pickle' && !title.trim()) {
       setStatus({
         type: 'error',
         message: 'Please enter a title'
       });
       return;
     }
-    
+
     if (!subtitle.trim()) {
       setStatus({
         type: 'error',
@@ -104,7 +105,7 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
       
       // Update hero text in Firestore
       const heroTextData = {
-        title: title.trim(),
+        title: id === 'products-pickle' ? '' : title.trim(),
         subtitle: subtitle.trim(),
         buttonText: buttonText.trim(),
         buttonLink: buttonLink.trim(),
@@ -184,23 +185,25 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
       {/* Form */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Hero Title *
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
-              placeholder="Enter the main hero title"
-              disabled={loading}
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">This is the main heading that visitors will see first</p>
-          </div>
+          {/* Title - Hidden for Pickle page */}
+          {id !== 'products-pickle' && (
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Hero Title *
+              </label>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 p-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
+                placeholder="Enter the main hero title"
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">This is the main heading that visitors will see first</p>
+            </div>
+          )}
 
           {/* Subtitle */}
           <div>
@@ -297,8 +300,12 @@ export default function EditHeroText({ params }: HeroTextEditProps) {
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white">
         <div className="text-center">
           <h2 className="text-sm font-medium text-blue-100 mb-2">PREVIEW</h2>
-          <h1 className="text-3xl font-bold mb-4">{title || 'Your Hero Title'}</h1>
-          <p className="text-xl text-blue-100 mb-6">{subtitle || 'Your Hero Subtitle'}</p>
+          {id !== 'products-pickle' && (
+            <h1 className="text-3xl font-bold mb-4">{title || 'Your Hero Title'}</h1>
+          )}
+          <p className={`text-xl text-blue-100 ${id === 'products-pickle' ? 'mb-6 text-3xl font-bold' : 'mb-6'}`}>
+            {subtitle || 'Your Hero Subtitle'}
+          </p>
           {buttonText && (
             <button className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors">
               {buttonText}

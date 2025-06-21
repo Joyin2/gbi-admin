@@ -36,14 +36,21 @@ function HeroTextCard({ heroText, formatDate }: { heroText: HeroText; formatDate
       </div>
 
       <div className="space-y-3">
-        <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Title</p>
-          <p className="text-sm font-medium text-gray-900 line-clamp-2">{heroText.title}</p>
-        </div>
+        {/* Show title only if it exists (not for pickle page) */}
+        {heroText.title && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Title</p>
+            <p className="text-sm font-medium text-gray-900 line-clamp-2">{heroText.title}</p>
+          </div>
+        )}
 
         <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Subtitle</p>
-          <p className="text-sm text-gray-700 line-clamp-1">{heroText.subtitle}</p>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+            {heroText.id === 'products-pickle' ? 'Main Text' : 'Subtitle'}
+          </p>
+          <p className={`text-sm line-clamp-1 ${heroText.id === 'products-pickle' ? 'font-medium text-gray-900' : 'text-gray-700'}`}>
+            {heroText.subtitle}
+          </p>
         </div>
 
         {heroText.buttonText && (
