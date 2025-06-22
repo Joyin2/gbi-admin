@@ -39,9 +39,9 @@ export default function NewAboutSection() {
   const [mediaFileTypes, setMediaFileTypes] = useState<('image' | 'video')[]>([]);
   const [order, setOrder] = useState(1);
   const [isActive, setIsActive] = useState(true);
-  const [icon, setIcon] = useState('');
-  const [buttonText, setButtonText] = useState('');
-  const [buttonLink, setButtonLink] = useState('');
+  const [icon] = useState('');
+  const [buttonText] = useState('');
+  const [buttonLink] = useState('');
   const [listItems, setListItems] = useState<string[]>(['']);
   const [valueCards, setValueCards] = useState<ValueCard[]>([{ icon: '', title: '', description: '' }]);
   const [missionCards, setMissionCards] = useState<MissionCard[]>([{ title: '', description: '' }]);

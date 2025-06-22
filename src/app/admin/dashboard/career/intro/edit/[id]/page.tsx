@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/app/admin/components/RichTextEditor';
 

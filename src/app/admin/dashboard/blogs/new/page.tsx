@@ -9,14 +9,24 @@ import RichTextEditor from '@/app/admin/components/RichTextEditor';
 import { onAuthStateChanged } from 'firebase/auth';
 import Image from 'next/image';
 
+interface MediaFile {
+  id: string;
+  file: File;
+  type: 'image' | 'video';
+  preview: string;
+  uploading?: boolean;
+  uploaded?: boolean;
+  url?: string;
+  error?: string;
+}
+
 export default function NewBlog() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('<p>Start writing your blog...</p>');
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [dragActive, setDragActive] = useState(false);
   const [status, setStatus] = useState<{
     type: 'success' | 'error' | null;
     message: string;
@@ -43,128 +53,186 @@ export default function NewBlog() {
     );
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+  const generateId = () => Math.random().toString(36).substr(2, 9);
 
-      // Determine file type
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
+  const validateFile = (file: File): string | null => {
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
 
-      if (!isImage && !isVideo) {
+    if (!isImage && !isVideo) {
+      return 'Please upload an image or video file';
+    }
+
+    // Check file size (max 50MB for videos, 5MB for images)
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return `File size should be less than ${isVideo ? '50MB' : '5MB'}`;
+    }
+
+    return null;
+  };
+
+  const createMediaFile = (file: File): MediaFile => {
+    const isImage = file.type.startsWith('image/');
+    const mediaFile: MediaFile = {
+      id: generateId(),
+      file,
+      type: isImage ? 'image' : 'video',
+      preview: '',
+    };
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setMediaFiles(prev => 
+        prev.map(media => 
+          media.id === mediaFile.id 
+            ? { ...media, preview: e.target?.result as string }
+            : media
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+
+    return mediaFile;
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    addFiles(files);
+    // Reset input
+    e.target.value = '';
+  };
+
+  const addFiles = (files: File[]) => {
+    const newMediaFiles: MediaFile[] = [];
+
+    files.forEach(file => {
+      const error = validateFile(file);
+      if (error) {
         setStatus({
           type: 'error',
-          message: 'Please upload an image or video file'
+          message: `${file.name}: ${error}`
         });
         return;
       }
 
-      // Check file size (max 50MB for videos, 5MB for images)
-      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-      if (file.size > maxSize) {
+      // Check if file already exists
+      const exists = mediaFiles.some(media => 
+        media.file.name === file.name && media.file.size === file.size
+      );
+      
+      if (exists) {
         setStatus({
           type: 'error',
-          message: `File size should be less than ${isVideo ? '50MB' : '5MB'}`
+          message: `${file.name} is already added`
         });
         return;
       }
 
-      setImage(file);
-      setMediaType(isImage ? 'image' : 'video');
+      newMediaFiles.push(createMediaFile(file));
+    });
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (newMediaFiles.length > 0) {
+      setMediaFiles(prev => [...prev, ...newMediaFiles]);
+      setStatus({ type: null, message: '' });
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+  };
+
+  const removeMediaFile = (id: string) => {
+    setMediaFiles(prev => prev.filter(media => media.id !== id));
+  };
+
+  const uploadSingleFile = async (mediaFile: MediaFile): Promise<string> => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        console.error('No authenticated user found');
-        throw new Error('You must be logged in to upload images');
+        throw new Error('You must be logged in to upload files');
       }
 
-      // Verify authentication state
-      console.log('Current auth state:', {
-        uid: user.uid,
-        email: user.email,
-        isAnonymous: user.isAnonymous,
-        emailVerified: user.emailVerified
-      });
-
-      // Create a unique filename with user ID to prevent conflicts
-      const filename = `${user.uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const isVideo = file.type.startsWith('video/');
-      const storageRef = ref(storage, `blog-${isVideo ? 'videos' : 'images'}/${filename}`);
+      const filename = `${user.uid}/${Date.now()}-${mediaFile.file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const storageRef = ref(storage, `blog-${mediaFile.type === 'video' ? 'videos' : 'images'}/${filename}`);
       
-      // Log upload attempt with more details
-      console.log('Upload attempt details:', {
-        filename,
-        size: file.size,
-        type: file.type,
-        userId: user.uid,
-        storagePath: storageRef.fullPath,
-        bucket: storageRef.bucket,
-        authState: {
-          uid: user.uid,
-          email: user.email
-        }
-      });
-
-      // Upload file with custom metadata
       const metadata = {
         customMetadata: {
           userId: user.uid,
           uploadedAt: new Date().toISOString(),
-          contentType: file.type,
+          contentType: mediaFile.file.type,
           userEmail: user.email || 'unknown',
-          mediaType: isVideo ? 'video' : 'image'
+          mediaType: mediaFile.type
         }
       };
 
-      try {
-        const snapshot = await uploadBytes(storageRef, file, metadata);
-        console.log('Upload successful:', {
-          ref: snapshot.ref.fullPath,
-          metadata: snapshot.metadata,
-          authState: {
-            uid: user.uid,
-            email: user.email
-          }
-        });
-
-        // Get download URL
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log('Download URL obtained:', downloadURL);
-
-        return downloadURL;
-      } catch (uploadError: unknown) {
-        if (uploadError instanceof Error) {
-          console.error('Upload operation failed:', uploadError);
-          throw uploadError;
-        } else {
-          throw new Error('Unknown upload error');
-        }
-      }
+      const snapshot = await uploadBytes(storageRef, mediaFile.file, metadata);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      return downloadURL;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        // Enhanced error logging
-        const errorDetails = {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        };
-        console.error('Detailed upload error:', errorDetails);
-        throw new Error(`Failed to upload image: ${error.message}`);
+        throw new Error(`Failed to upload ${mediaFile.file.name}: ${error.message}`);
       } else {
-        throw new Error('Failed to upload image: Unknown error occurred');
+        throw new Error(`Failed to upload ${mediaFile.file.name}: Unknown error occurred`);
       }
     }
+  };
+
+  const uploadAllFiles = async (): Promise<string[]> => {
+    const uploadPromises = mediaFiles.map(async (mediaFile) => {
+      try {
+        // Update UI to show uploading state
+        setMediaFiles(prev => 
+          prev.map(media => 
+            media.id === mediaFile.id 
+              ? { ...media, uploading: true, error: undefined }
+              : media
+          )
+        );
+
+        const url = await uploadSingleFile(mediaFile);
+
+        // Update UI to show success
+        setMediaFiles(prev => 
+          prev.map(media => 
+            media.id === mediaFile.id 
+              ? { ...media, uploading: false, uploaded: true, url }
+              : media
+          )
+        );
+
+        return url;
+      } catch (error) {
+        // Update UI to show error
+        setMediaFiles(prev => 
+          prev.map(media => 
+            media.id === mediaFile.id 
+              ? { ...media, uploading: false, error: error instanceof Error ? error.message : 'Upload failed' }
+              : media
+          )
+        );
+        throw error;
+      }
+    });
+
+    return Promise.all(uploadPromises);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,9 +245,7 @@ export default function NewBlog() {
       return;
     }
 
-    // Add this validation and logging
     console.log('Content before submission:', content);
-    console.log('Content length:', content.length);
     if (!content || content === '<p>Start writing your blog...</p>' || content === '<p></p>') {
       setStatus({
         type: 'error',
@@ -201,36 +267,33 @@ export default function NewBlog() {
     setStatus({ type: null, message: '' });
     
     try {
-      let imageUrl = null;
+      let mediaUrls: string[] = [];
       
-      // Upload image if selected
-      if (image) {
+      // Upload all media files if any
+      if (mediaFiles.length > 0) {
+        setStatus({
+          type: null,
+          message: `Uploading ${mediaFiles.length} media file(s)...`
+        });
+
         try {
+          mediaUrls = await uploadAllFiles();
+          
           setStatus({
             type: null,
-            message: `Uploading ${mediaType}...`
-          });
-
-          console.log(`Starting ${mediaType} upload process...`);
-          imageUrl = await uploadImage(image);
-          console.log(`${mediaType} upload completed successfully`);
-
-          setStatus({
-            type: null,
-            message: `${mediaType} uploaded successfully. Creating blog post...`
+            message: 'Media files uploaded successfully. Creating blog post...'
           });
         } catch (error: unknown) {
-          // Enhanced error logging
           if (error instanceof Error) {
-            console.error('Error in handleSubmit during image upload:', error);
+            console.error('Error during media upload:', error);
             setStatus({
               type: 'error',
-              message: `Failed to upload ${mediaType}: ${error.message || 'Unknown error occurred'}`
+              message: `Failed to upload media files: ${error.message}`
             });
           } else {
             setStatus({
               type: 'error',
-              message: `Failed to upload ${mediaType}: Unknown error occurred`
+              message: 'Failed to upload media files: Unknown error occurred'
             });
           }
           setLoading(false);
@@ -238,13 +301,22 @@ export default function NewBlog() {
         }
       }
       
-      // Define the blog data object
+      // Define the blog data object with media arrays
       const blogData = {
         title,
         content,
-        imageUrl,
-        mediaUrl: imageUrl, // New field for consistency
-        mediaType,
+        // Legacy fields for backward compatibility
+        imageUrl: mediaUrls.length > 0 ? mediaUrls[0] : null,
+        mediaUrl: mediaUrls.length > 0 ? mediaUrls[0] : null,
+        mediaType: mediaFiles.length > 0 ? mediaFiles[0].type : null,
+        // New fields for multiple media support
+        mediaUrls: mediaUrls,
+        mediaFiles: mediaFiles.map((media, index) => ({
+          url: mediaUrls[index],
+          type: media.type,
+          name: media.file.name,
+          size: media.file.size
+        })),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         authorId: user.uid,
@@ -347,45 +419,123 @@ export default function NewBlog() {
               />
             </div>
             
+            {/* Multiple Media Upload Section */}
             <div>
-              <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">
-                Featured Media (Images: max 5MB, Videos: max 50MB)
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Media Files (Images: max 5MB each, Videos: max 50MB each)
               </label>
-              <input
-                id="image"
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleImageChange}
-                className="w-full rounded-md border border-gray-300 p-2 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800"
-                disabled={loading}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
-              </p>
-              {imagePreview && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600 mb-2">
-                    {mediaType === 'image' ? 'Image' : 'Video'} Preview:
-                  </p>
-                  {mediaType === 'image' ? (
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      width={320}
-                      height={160}
-                      className="h-40 w-auto object-cover rounded border"
-                      unoptimized
-                    />
-                  ) : (
-                    <video
-                      src={imagePreview}
-                      controls
-                      className="h-40 w-auto object-cover rounded border"
-                      preload="metadata"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  )}
+              
+              {/* Drag and Drop Area */}
+              <div
+                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  dragActive 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={loading}
+                />
+                <div className="space-y-2">
+                  <div className="text-4xl text-gray-400">📁</div>
+                  <div className="text-lg font-medium text-gray-700">
+                    Drop files here or click to browse
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Supported formats: Images (JPG, PNG, GIF, WebP) and Videos (MP4, WebM, MOV)
+                  </div>
+                </div>
+              </div>
+              
+              {/* Media Preview Gallery */}
+              {mediaFiles.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <h4 className="text-sm font-medium text-gray-700">
+                    Selected Files ({mediaFiles.length})
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {mediaFiles.map((media) => (
+                      <div key={media.id} className="relative border rounded-lg p-3 bg-gray-50">
+                        {/* Remove button */}
+                        <button
+                          type="button"
+                          onClick={() => removeMediaFile(media.id)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 z-10"
+                          disabled={loading}
+                        >
+                          ×
+                        </button>
+                        
+                        {/* Preview */}
+                        <div className="mb-2">
+                          {media.type === 'image' ? (
+                            media.preview && (
+                              <Image
+                                src={media.preview}
+                                alt="Preview"
+                                width={200}
+                                height={120}
+                                className="w-full h-24 object-cover rounded border"
+                                unoptimized
+                              />
+                            )
+                          ) : (
+                            media.preview && (
+                              <video
+                                src={media.preview}
+                                className="w-full h-24 object-cover rounded border"
+                                preload="metadata"
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                            )
+                          )}
+                        </div>
+                        
+                        {/* File info */}
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div className="font-medium truncate" title={media.file.name}>
+                            {media.file.name}
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="capitalize">{media.type}</span>
+                            <span>{(media.file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                          </div>
+                        </div>
+                        
+                        {/* Upload status */}
+                        {media.uploading && (
+                          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                              <div className="text-xs text-gray-600 mt-1">Uploading...</div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {media.uploaded && (
+                          <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                            ✓
+                          </div>
+                        )}
+                        
+                        {media.error && (
+                          <div className="mt-1 text-xs text-red-600" title={media.error}>
+                            Upload failed
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

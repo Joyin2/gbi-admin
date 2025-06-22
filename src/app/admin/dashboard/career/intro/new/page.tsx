@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/app/admin/components/RichTextEditor';
 
@@ -58,9 +57,9 @@ export default function NewCareerIntro() {
         <h3 className="text-lg font-semibold text-blue-800 mb-2">💡 Examples from your website</h3>
         <p className="text-blue-700 mb-2">Based on your current site, you might want to create:</p>
         <ul className="list-disc list-inside text-blue-700 space-y-1">
-          <li><strong>"Our Career And Partnership Opportunities"</strong> - Main intro section</li>
-          <li><strong>"Why Join Us?"</strong> - Benefits and advantages section</li>
-          <li><strong>"Ready to Start Your Journey?"</strong> - Call-to-action section</li>
+          <li><strong>&quot;Our Career And Partnership Opportunities&quot;</strong> - Main intro section</li>
+          <li><strong>&quot;Why Join Us?&quot;</strong> - Benefits and advantages section</li>
+          <li><strong>&quot;Ready to Start Your Journey?&quot;</strong> - Call-to-action section</li>
         </ul>
       </div>
       

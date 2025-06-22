@@ -27,7 +27,7 @@ interface ContactSettings {
     linkedin?: string;
     instagram?: string;
   };
-  updatedAt?: any;
+  updatedAt?: unknown;
 }
 
 export default function Contacts() {
@@ -56,7 +56,7 @@ export default function Contacts() {
   const [saving, setSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<unknown>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -159,7 +159,7 @@ export default function Contacts() {
           }
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching contact settings:', error);
       setSettingsError('Failed to load contact settings. Please try again.');
     } finally {
@@ -189,7 +189,7 @@ export default function Contacts() {
         setSettings({ ...settings, id: docRef.id });
         setSuccess('Contact settings saved successfully!');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving contact settings:', error);
       setSettingsError('Failed to save contact settings. Please try again.');
     } finally {

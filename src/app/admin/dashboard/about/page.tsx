@@ -2,15 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
 
-interface MediaFile {
-  url: string;
-  type: 'image' | 'video';
-  filename: string;
-}
+
 
 interface AboutSection {
   id: string;
@@ -29,8 +25,8 @@ interface AboutSection {
   listItems?: string[];
   valueCards?: { icon: string; title: string; description: string; }[];
   missionCards?: { title: string; description: string; }[];
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export default function AboutSectionsPage() {

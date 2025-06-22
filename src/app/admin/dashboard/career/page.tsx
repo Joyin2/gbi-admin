@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
 
 interface Career {
