@@ -17,6 +17,7 @@ export default function Dashboard() {
     contacts: 0,
     heroTexts: 0,
     aboutSections: 0,
+    footerData: 0,
   });
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function Dashboard() {
         const contactsSnapshot = await getDocs(collection(db, 'contacts'));
         const heroTextsSnapshot = await getDocs(collection(db, 'heroTexts'));
         const aboutSectionsSnapshot = await getDocs(collection(db, 'aboutSections'));
+        const footerDataSnapshot = await getDocs(collection(db, 'footerData'));
 
         setStats({
           blogs: blogsSnapshot.size,
@@ -46,6 +48,7 @@ export default function Dashboard() {
           contacts: contactsSnapshot.size,
           heroTexts: heroTextsSnapshot.size,
           aboutSections: aboutSectionsSnapshot.size,
+          footerData: footerDataSnapshot.size,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -263,6 +266,23 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Footer Data */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-sm font-medium text-gray-500">Footer Configuration</h3>
+              <p className="text-2xl font-bold text-gray-900">{stats.footerData > 0 ? 'Configured' : 'Not Set'}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -312,6 +332,15 @@ export default function Dashboard() {
               </svg>
             </div>
             <span className="text-sm font-medium text-orange-700">Manage Hero Text</span>
+          </a>
+
+          <a href="/admin/dashboard/footer" className="flex items-center p-4 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors">
+            <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-teal-700">Manage Footer</span>
           </a>
         </div>
       </div>
