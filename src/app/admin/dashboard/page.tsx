@@ -16,6 +16,7 @@ export default function Dashboard() {
     ecovillageImages: 0,
     contacts: 0,
     heroTexts: 0,
+    aboutSections: 0,
   });
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function Dashboard() {
         const ecovillageSnapshot = await getDocs(collection(db, 'ecovillage'));
         const contactsSnapshot = await getDocs(collection(db, 'contacts'));
         const heroTextsSnapshot = await getDocs(collection(db, 'heroTexts'));
+        const aboutSectionsSnapshot = await getDocs(collection(db, 'aboutSections'));
 
         setStats({
           blogs: blogsSnapshot.size,
@@ -43,6 +45,7 @@ export default function Dashboard() {
           ecovillageImages: ecovillageSnapshot.size,
           contacts: contactsSnapshot.size,
           heroTexts: heroTextsSnapshot.size,
+          aboutSections: aboutSectionsSnapshot.size,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -223,6 +226,23 @@ export default function Dashboard() {
             <div className="ml-4 flex-1">
               <h3 className="text-sm font-medium text-gray-500">Contact Submissions</h3>
               <p className="text-2xl font-bold text-gray-900">{stats.contacts}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* About Sections */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-sm font-medium text-gray-500">About Page Sections</h3>
+              <p className="text-2xl font-bold text-gray-900">{stats.aboutSections}</p>
             </div>
           </div>
         </div>
