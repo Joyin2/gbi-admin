@@ -438,7 +438,7 @@ export default function NewAboutSection() {
             <select
               id="sectionType"
               value={sectionType}
-              onChange={(e) => setSectionType(e.target.value as any)}
+              onChange={(e) => setSectionType(e.target.value as 'heading' | 'text' | 'image' | 'video' | 'mixed' | 'list' | 'values' | 'mission')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="heading">Heading Only</option>
@@ -545,7 +545,7 @@ export default function NewAboutSection() {
             </label>
             <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
-                💡 <strong>Value Cards:</strong> Create individual value cards like "Sustainability", "Quality", etc. Each card should have an icon/emoji, title, and description.
+                💡 <strong>Value Cards:</strong> Create individual value cards like &quot;Sustainability&quot;, &quot;Quality&quot;, etc. Each card should have an icon/emoji, title, and description.
               </p>
             </div>
             <div className="space-y-4">
@@ -638,7 +638,7 @@ export default function NewAboutSection() {
                         value={card.title}
                         onChange={(e) => handleValueCardChange(index, 'title', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Sustainability, Quality"
+                        placeholder="e.g. Sustainability, Quality"
                       />
                     </div>
                     
@@ -688,7 +688,7 @@ export default function NewAboutSection() {
             </label>
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800">
-                🎯 <strong>Mission Cards:</strong> Create mission cards that represent your organization's core mission areas. Based on your website, these include things like "Sustainable Agriculture", "Community Empowerment", etc.
+                🎯 <strong>Mission Cards:</strong> Create mission cards that represent your organization&apos;s core mission areas. Based on your website, these include things like &quot;Sustainable Agriculture&quot;, &quot;Community Empowerment&quot;, etc.
               </p>
             </div>
             <div className="space-y-4">
@@ -717,7 +717,7 @@ export default function NewAboutSection() {
                         value={card.title}
                         onChange={(e) => handleMissionCardChange(index, 'title', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Sustainable Agriculture, Community Empowerment"
+                        placeholder="e.g. Sustainable Agriculture, Community Empowerment"
                       />
                     </div>
                     

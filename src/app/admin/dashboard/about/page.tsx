@@ -236,7 +236,7 @@ export default function AboutSectionsPage() {
             </h3>
             <div className="mt-2 text-sm text-blue-700">
               <p>
-                Need to edit the main About page sections like "Empowering Local Communities", "Our Values", or "Ethics & Compliances"? 
+                Need to edit the main About page sections like &quot;Empowering Local Communities&quot;, &quot;Our Values&quot;, or &quot;Ethics &amp; Compliances&quot;? 
                 Use the <strong>⭐ Key Sections</strong> button above for quick access to these important sections with photo and video upload support.
               </p>
             </div>
@@ -338,7 +338,7 @@ export default function AboutSectionsPage() {
                   
                   {section.buttonText && (
                     <div className="text-sm text-gray-600 mb-2">
-                      Button: "{section.buttonText}"
+                      Button: &quot;{section.buttonText}&quot;
                     </div>
                   )}
                   

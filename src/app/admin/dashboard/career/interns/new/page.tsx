@@ -5,6 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function NewIntern() {
   const [name, setName] = useState('');
@@ -130,10 +131,13 @@ export default function NewIntern() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
             {imagePreview ? (
               <div className="text-center">
-                <img 
+                <Image 
                   src={imagePreview} 
                   alt="Preview" 
+                  width={128}
+                  height={128}
                   className="w-32 h-32 rounded-full object-cover mx-auto mb-4"
+                  unoptimized
                 />
                 <button
                   type="button"
@@ -245,10 +249,13 @@ export default function NewIntern() {
           <div className="bg-white p-6 rounded-lg border max-w-sm mx-auto">
             {imagePreview && (
               <div className="mb-4">
-                <img 
+                <Image 
                   src={imagePreview} 
                   alt="Preview"
+                  width={80}
+                  height={80}
                   className="w-20 h-20 rounded-full object-cover mx-auto"
+                  unoptimized
                 />
               </div>
             )}

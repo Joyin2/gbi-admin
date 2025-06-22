@@ -5,6 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function EditIntern({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -171,10 +172,13 @@ export default function EditIntern({ params }: { params: Promise<{ id: string }>
               Current Profile Photo
             </label>
             <div className="flex items-center space-x-4">
-              <img 
+              <Image 
                 src={currentImageUrl} 
                 alt="Current profile" 
+                width={80}
+                height={80}
                 className="w-20 h-20 rounded-full object-cover"
+                unoptimized
               />
               <button
                 type="button"
@@ -195,10 +199,13 @@ export default function EditIntern({ params }: { params: Promise<{ id: string }>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
             {newImagePreview ? (
               <div className="text-center">
-                <img 
+                <Image 
                   src={newImagePreview} 
                   alt="New preview" 
+                  width={128}
+                  height={128}
                   className="w-32 h-32 rounded-full object-cover mx-auto mb-4"
+                  unoptimized
                 />
                 <button
                   type="button"
@@ -307,10 +314,13 @@ export default function EditIntern({ params }: { params: Promise<{ id: string }>
           <div className="bg-white p-6 rounded-lg border max-w-sm mx-auto">
             {displayImage && (
               <div className="mb-4">
-                <img 
+                <Image 
                   src={displayImage} 
                   alt="Preview"
+                  width={80}
+                  height={80}
                   className="w-20 h-20 rounded-full object-cover mx-auto"
+                  unoptimized
                 />
               </div>
             )}

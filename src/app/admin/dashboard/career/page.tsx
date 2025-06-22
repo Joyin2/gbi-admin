@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Career {
   id: string;
@@ -339,10 +340,13 @@ export default function Careers() {
                       
                       {intern.imageUrl && (
                         <div className="mb-4">
-                          <img 
+                          <Image 
                             src={intern.imageUrl} 
                             alt={intern.name}
+                            width={80}
+                            height={80}
                             className="w-20 h-20 rounded-full object-cover mx-auto"
+                            unoptimized
                           />
                         </div>
                       )}
